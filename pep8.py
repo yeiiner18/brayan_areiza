@@ -1,165 +1,179 @@
-
 import tkinter as tk
+import ast
+import operator
 
-
+# Configuración de la ventana
 ventana = tk.Tk()
-ventana.title("mi primera calculadora" \
-"")
+ventana.title("Mi Calculadora - Python")
+ventana.geometry("340x430")
+ventana.resizable(False, False)
+ventana.configure(bg="#1E1E2E")
 
-posicion = 0
+# Colores
+color_fondo = "#1E1E2E"
+color_pantalla = "#313244"
+color_numero = "#45475A"
+color_operacion = "#89B4FA"
+color_borrar = "#F38BA8"
+color_igual = "#A6E3A1"
+color_texto = "#FFFFFF"
 
+# Pantalla de la calculadora
 entrada_texto = tk.Entry(
     ventana,
-    font=("Calibri", 20)
+    font=("Calibri", 25),
+    bg=color_pantalla,
+    fg=color_texto,
+    insertbackground=color_texto,
+    justify="right",
+    bd=0
 )
 entrada_texto.grid(
     row=0,
     column=0,
     columnspan=4,
-    padx=3,
-    pady=3,
+    padx=10,
+    pady=15,
+    ipady=12,
+    sticky="nsew"
 )
 
 
+# Insertar valores
 def insertar_valor(valor):
-    global posicion
+    if entrada_texto.get() == "Error":
+        entrada_texto.delete(0, tk.END)
 
-    entrada_texto.insert(posicion, valor)
-    posicion += len(str(valor))
+    entrada_texto.insert(tk.END, str(valor))
 
 
+# Borrar toda la pantalla
 def borrar():
-    global posicion
-
     entrada_texto.delete(0, tk.END)
-    posicion = 0
 
 
+# Borrar el último carácter
+def borrar_ultimo():
+    contenido = entrada_texto.get()
+
+    if contenido:
+        entrada_texto.delete(len(contenido) - 1, tk.END)
+
+
+# Evaluar operaciones matemáticas de forma controlada
+operaciones = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.Pow: operator.pow,
+    ast.Mod: operator.mod
+}
+
+
+def evaluar(nodo):
+    if isinstance(nodo, ast.Expression):
+        return evaluar(nodo.body)
+
+    if isinstance(nodo, ast.Constant) and type(nodo.value) in (int, float):
+        return nodo.value
+
+    if isinstance(nodo, ast.BinOp) and type(nodo.op) in operaciones:
+        izquierda = evaluar(nodo.left)
+        derecha = evaluar(nodo.right)
+        return operaciones[type(nodo.op)](izquierda, derecha)
+
+    if isinstance(nodo, ast.UnaryOp) and isinstance(
+        nodo.op, (ast.UAdd, ast.USub)
+    ):
+        valor = evaluar(nodo.operand)
+        return valor if isinstance(nodo.op, ast.UAdd) else -valor
+
+    raise ValueError("Operación no permitida")
+
+
+# Calcular resultado
 def calcular():
-    global posicion
-
     ecuacion = entrada_texto.get()
 
     try:
-        resultado = eval(ecuacion)
+        arbol = ast.parse(ecuacion, mode="eval")
+        resultado = evaluar(arbol)
 
         entrada_texto.delete(0, tk.END)
         entrada_texto.insert(0, str(resultado))
-        posicion = len(str(resultado))
 
-    except (SyntaxError, ZeroDivisionError, NameError, TypeError):
+    except Exception:
         entrada_texto.delete(0, tk.END)
         entrada_texto.insert(0, "Error")
-        posicion = 5
 
 
+# Crear botones con diseño
+def crear_boton(texto, fila, columna, comando,
+                color=color_numero, columnas=1):
 
-boton_9 = tk.Button(
-    ventana, text="9", width=5, height=2,
-    command=lambda: insertar_valor(9)
-)
-boton_8 = tk.Button(
-    ventana, text="8", width=5, height=2,
-    command=lambda: insertar_valor(8)
-)
-boton_7 = tk.Button(
-    ventana, text="7", width=5, height=2,
-    command=lambda: insertar_valor(7)
-)
-boton_6 = tk.Button(
-    ventana, text="6", width=5, height=2,
-    command=lambda: insertar_valor(6)
-)
-boton_5 = tk.Button(
-    ventana, text="5", width=5, height=2,
-    command=lambda: insertar_valor(5)
-)
-boton_4 = tk.Button(
-    ventana, text="4", width=5, height=2,
-    command=lambda: insertar_valor(4)
-)
-boton_3 = tk.Button(
-    ventana, text="3", width=5, height=2,
-    command=lambda: insertar_valor(3)
-)
-boton_2 = tk.Button(
-    ventana, text="2", width=5, height=2,
-    command=lambda: insertar_valor(2)
-)
-boton_1 = tk.Button(
-    ventana, text="1", width=5, height=2,
-    command=lambda: insertar_valor(1)
-)
-boton_0 = tk.Button(
-    ventana, text="0", width=13, height=2,
-    command=lambda: insertar_valor(0)
-)
+    boton = tk.Button(
+        ventana,
+        text=texto,
+        font=("Calibri", 16, "bold"),
+        width=5,
+        height=2,
+        bg=color,
+        fg=color_texto,
+        activebackground="#585B70",
+        activeforeground=color_texto,
+        bd=0,
+        cursor="hand2",
+        command=comando
+    )
 
-boton_igual = tk.Button(
-    ventana, text="=", width=5, height=2,
-    command=calcular
-)
-boton_borrar = tk.Button(
-    ventana, text="AC", width=5, height=2,
-    command=borrar
-)
-boton_parentesis_1 = tk.Button(
-    ventana, text="(", width=5, height=2,
-    command=lambda: insertar_valor("(")
-)
-boton_parentesis_2 = tk.Button(
-    ventana, text=")", width=5, height=2,
-    command=lambda: insertar_valor(")")
-)
-boton_punto = tk.Button(
-    ventana, text=".", width=5, height=2,
-    command=lambda: insertar_valor(".")
-)
-boton_suma = tk.Button(
-    ventana, text="+", width=5, height=2,
-    command=lambda: insertar_valor("+")
-)
-boton_resta = tk.Button(
-    ventana, text="-", width=5, height=2,
-    command=lambda: insertar_valor("-")
-)
-boton_multiplicacion = tk.Button(
-    ventana, text="*", width=5, height=2,
-    command=lambda: insertar_valor("*")
-)
-boton_division = tk.Button(
-    ventana, text="/", width=5, height=2,
-    command=lambda: insertar_valor("/")
-)
+    boton.grid(
+        row=fila,
+        column=columna,
+        columnspan=columnas,
+        padx=5,
+        pady=5,
+        sticky="nsew"
+    )
+
+    return boton
 
 
+# Primera fila: borrar y paréntesis
+crear_boton("AC", 1, 0, borrar, color_borrar)
+crear_boton("⌫", 1, 1, borrar_ultimo, color_borrar)
+crear_boton("(", 1, 2, lambda: insertar_valor("("), color_operacion)
+crear_boton(")", 1, 3, lambda: insertar_valor(")"), color_operacion)
 
-boton_borrar.grid(row=1, column=0, padx=5, pady=2)
-boton_parentesis_1.grid(row=1, column=1, padx=5, pady=2)
-boton_parentesis_2.grid(row=1, column=2, padx=5, pady=2)
-boton_division.grid(row=1, column=3, padx=5, pady=2)
+# Segunda fila
+crear_boton("7", 2, 0, lambda: insertar_valor(7))
+crear_boton("8", 2, 1, lambda: insertar_valor(8))
+crear_boton("9", 2, 2, lambda: insertar_valor(9))
+crear_boton("/", 2, 3, lambda: insertar_valor("/"), color_operacion)
 
-boton_7.grid(row=2, column=0, padx=5, pady=2)
-boton_8.grid(row=2, column=1, padx=5, pady=2)
-boton_9.grid(row=2, column=2, padx=5, pady=2)
-boton_multiplicacion.grid(row=2, column=3, padx=5, pady=2)
+# Tercera fila
+crear_boton("4", 3, 0, lambda: insertar_valor(4))
+crear_boton("5", 3, 1, lambda: insertar_valor(5))
+crear_boton("6", 3, 2, lambda: insertar_valor(6))
+crear_boton("*", 3, 3, lambda: insertar_valor("*"), color_operacion)
 
-boton_4.grid(row=3, column=0, padx=5, pady=2)
-boton_5.grid(row=3, column=1, padx=5, pady=2)
-boton_6.grid(row=3, column=2, padx=5, pady=2)
-boton_resta.grid(row=3, column=3, padx=5, pady=2)
+# Cuarta fila
+crear_boton("1", 4, 0, lambda: insertar_valor(1))
+crear_boton("2", 4, 1, lambda: insertar_valor(2))
+crear_boton("3", 4, 2, lambda: insertar_valor(3))
+crear_boton("-", 4, 3, lambda: insertar_valor("-"), color_operacion)
 
-boton_1.grid(row=4, column=0, padx=5, pady=2)
-boton_2.grid(row=4, column=1, padx=5, pady=2)
-boton_3.grid(row=4, column=2, padx=5, pady=2)
-boton_suma.grid(row=4, column=3, padx=5, pady=2)
+# Quinta fila
+crear_boton("0", 5, 0, lambda: insertar_valor(0), columnas=2)
+crear_boton(".", 5, 2, lambda: insertar_valor("."))
+crear_boton("%", 5, 3, lambda: insertar_valor("/100"), color_operacion)
 
-boton_0.grid(
-    row=5, column=0, columnspan=2,
-    padx=13, pady=2
-)
-boton_punto.grid(row=5, column=2, padx=5, pady=2)
-boton_igual.grid(row=5, column=3, padx=5, pady=2)
+# Sexta fila
+crear_boton("+", 6, 0, lambda: insertar_valor("+"), color_operacion)
+crear_boton("=", 6, 1, calcular, color_igual, columnas=3)
 
+# Ajustar columnas
+for columna in range(4):
+    ventana.grid_columnconfigure(columna, weight=1)
 
 ventana.mainloop()
